@@ -115,6 +115,11 @@ def comment_on_pr(comment_body):
     pr.create_issue_comment(body=comment_body)
 
 
+def _check_valid_version_tag(tag):
+    tag_str = str(tag)
+    return len(tag_str) > 0 and tag_str[0] == "v" and semver.Version.is_valid(tag_str[1:])
+
+
 def main():
     """Main function orchestrating the tag bump and commenting on the PR.
     Reads its configuration from a json file and environment variables provided by github actions.
@@ -129,10 +134,11 @@ def main():
 
     comment_body = ''
     new_tag = None
-    if len(repo.tags) == 0:
+    tags_to_consider = [t for t in repo.tags if _check_valid_version_tag(t)]
+    if len(tags_to_consider) == 0:
         new_tag = 'v1.0.0'
     else:
-        current_tag = get_current_tag(repo.tags)
+        current_tag = get_current_tag(tags_to_consider)
         new_tag = semver_bump(current_tag, repo.head.commit.message)
 
     if new_tag is not None:
