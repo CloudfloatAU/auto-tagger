@@ -1,9 +1,26 @@
 name: 'Github PR Auto Tagger'
 description: 'increment tag and push it'
 author: 'Ruelala'
+# Composite (not docker) so no image is built/pulled on every run. A docker
+# action builds the Dockerfile on the runner and pulls its base image
+# anonymously from public ECR, which rate-limits with 429 toomanyrequests.
+# The action declares no inputs or outputs; entrypoint.py is configured purely
+# by env vars (GITHUB_TOKEN, GITHUB_PR_NUMBER, DRYRUN, plus the GITHUB_* the
+# runner sets), which a composite step inherits from the calling step's `env:`.
 runs:
-  using: 'docker'
-  image: 'Dockerfile'
+  using: 'composite'
+  steps:
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    - name: Install dependencies
+      shell: bash
+      run: python -m pip install -r "${{ github.action_path }}/requirements.txt"
+    - name: Bump version and push tag
+      shell: bash
+      run: |
+        git config --global --add safe.directory "$GITHUB_WORKSPACE"
+        python "${{ github.action_path }}/entrypoint.py"
 branding:
   icon: 'git-merge'
   color: 'purple'

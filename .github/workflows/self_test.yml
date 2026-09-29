@@ -1,0 +1,20 @@
+name: self_test
+
+# Runs the action from this checkout in DRYRUN mode (prints the next tag, never
+# pushes a tag or comments) to prove the composite action installs and runs.
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  dryrun:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Dry-run the action
+        uses: ./
+        env:
+          DRYRUN: 'true'
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
